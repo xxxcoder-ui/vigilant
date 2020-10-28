@@ -1,0 +1,14 @@
+version: "{build}"
+ 
+platform: x64
+environment:
+  nodejs_version: "6.9.2"
+
+install:
+  - ps: wget https://github.com/SiaPrime/SiaPrime/releases/download/v1.3.5.2/SiaPrime-v1.3.5.2-windows-amd64.zip -O SiaPrime-v1.3.5.2-windows-amd64.zip
+  - ps: 7z.exe x SiaPrime-v1.3.5.2-windows-amd64.zip
+  - rename SiaPrime-v1.3.5.2-windows-amd64 Sia
+  - npm install
+
+
+build: off

@@ -1,0 +1,51 @@
+import PropTypes from 'prop-types'
+import React, { Component } from 'react'
+import './NotificationProgressItem.less'
+import ProgressIcon from '../ProgressIcon'
+import { SVG } from '@opuscapita/react-svg'
+
+const propTypes = {
+  icon: PropTypes.shape({ svg: PropTypes.string, fill: PropTypes.string }),
+  title: PropTypes.node,
+  progress: PropTypes.number,
+  onClick: PropTypes.func,
+  onProgressClick: PropTypes.func
+}
+const defaultProps = {
+  icon: null,
+  title: '',
+  progress: 100,
+  onClick: () => {},
+  onProgressClick: () => {}
+}
+
+export default class NotificationProgressItem extends Component {
+  render() {
+    const { icon, title, progress } = this.props
+
+    const iconElement = icon ? (
+      <div className="oc-fm--notification-progress-item__icon">
+        <SVG svg={icon.svg} style={{ fill: icon.fill || 'rgba(0, 0, 0, 0.72)' }} />
+      </div>
+    ) : null
+
+    const titleElement = title ? (
+      <div className="oc-fm--notification-progress-item__title" title={title}>
+        {title}
+      </div>
+    ) : null
+
+    return (
+      <div className="oc-fm--notification-progress-item">
+        {iconElement}
+        {titleElement}
+        <div className="oc-fm--notification-progress-item__progress-icon">
+          <ProgressIcon radius={12} progress={progress} />
+        </div>
+      </div>
+    )
+  }
+}
+
+NotificationProgressItem.propTypes = propTypes
+NotificationProgressItem.defaultProps = defaultProps

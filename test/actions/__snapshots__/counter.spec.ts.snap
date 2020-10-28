@@ -1,0 +1,8 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`actions sdf 1`] = `
+Object {
+  "payload": undefined,
+  "type": "dashboard/INITIAL_DATA_FETCH",
+}
+`;

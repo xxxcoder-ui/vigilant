@@ -1,0 +1,257 @@
+import { Application } from 'spectron'
+import { spawn } from 'child_process'
+import { expect } from 'chai'
+import psTree from 'ps-tree'
+import * as Siad from '../js/siaprime.js'
+import fs from 'fs'
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// getSiadChild takes an input pid and looks at all the child process of that
+// pid, returning an object with the fields {exists, pid}, where exists is true
+// if the input pid has a 'spd' child, and the pid is the process id of the
+// child.
+const getSiadChild = (pid) => new Promise((resolve, reject) => {
+	psTree(pid, (err, children) => {
+		if (err) {
+			reject(err)
+		}
+		children.forEach((child) => {
+			const commString = child.COMM ? 'COMM' : 'COMMAND'
+			if (child[commString].includes('spd') || child[commString].includes('spd.exe')) {
+				resolve({exists: true, pid: child.PID})
+			}
+		})
+		resolve({exists: false})
+	})
+})
+
+// pkillSiad kills all siad processes running on the machine, used in these
+// tests to ensure a clean env
+const pkillSiad = () => new Promise((resolve, reject) => {
+	psTree(process.pid, (err, children) => {
+		if (err) {
+			reject(err)
+		}
+		children.forEach((child) => {
+			const commString = child.COMM ? 'COMM' : 'COMMAND'
+			if (child[commString].includes('spd') || child[commString].includes('spd.exe')) {
+				if (process.platform === 'win32') {
+					spawn('taskkill', ['/pid', child.PID, '/f', '/t'])
+				} else {
+					try {
+						process.kill(child.PID, 'SIGKILL')
+					} catch (e) {
+						console.log('Error SIGKILL', e)
+					}
+				}
+			}
+		})
+		resolve()
+	})
+})
+
+// isProcessRunning leverages the semantics of `process.kill` to return true if
+// the input pid is a running process.  If process.kill is initiated with the
+// signal set to '0', no signal is sent, but error checking is still performed.
+const isProcessRunning = (pid) => {
+	try {
+		process.kill(pid, 0)
+		return true
+	} catch (e) {
+		console.log(`PID ${pid} not killed, ${e}`)
+		return false
+	}
+}
+
+const electronBinary = process.platform === 'win32' ? 'node_modules\\electron\\dist\\electron.exe' : './node_modules/.bin/electron'
+
+// we need functions for mocha's `this` for setting timeouts.
+/* eslint-disable no-invalid-this */
+/* eslint-disable no-unused-expressions */
+describe('startup and shutdown behaviour', () => {
+	after(async () => {
+		// never leave a dangling siad
+		await pkillSiad()
+	})
+	describe('window closing behaviour', function() {
+		this.timeout(120000)
+		let app
+		let siadProcess
+		beforeEach(async () => {
+			app = new Application({
+				path: electronBinary,
+				args: [
+					'.',
+				],
+			})
+			await app.start()
+			await app.client.waitUntilWindowLoaded()
+			while (await app.client.isVisible('#overlay-text') === true) {
+				await sleep(100)
+			}
+		})
+		afterEach(async () => {
+			await pkillSiad()
+			while (isProcessRunning(siadProcess.pid)) {
+				await sleep(100)
+			}
+			let isBrowserWindowDestroyed = false
+			try {
+				isBrowserWindowDestroyed = await app.browserWindow.isDestroyed()
+			} catch (e) {
+				isBrowserWindowDestroyed = true
+			}
+			if (!isBrowserWindowDestroyed) {
+				await app.stop()
+			}
+		})
+		it('hides the window and persists in tray if closeToTray = true', async () => {
+			const pid = await app.mainProcess.pid()
+			siadProcess = await getSiadChild(pid)
+			app.webContents.executeJavaScript('window.closeToTray = true')
+			app.browserWindow.close()
+			await sleep(1000)
+			expect(await app.browserWindow.isDestroyed()).to.be.false
+			expect(await app.browserWindow.isVisible()).to.be.false
+			expect(siadProcess.exists).to.be.true
+			expect(isProcessRunning(siadProcess.pid)).to.be.true
+		})
+		it('quits gracefully on close if closeToTray = false', async () => {
+			app.webContents.executeJavaScript('window.closeToTray = false')
+			const pid = await app.mainProcess.pid()
+			expect(siadProcess.exists).to.be.true
+
+			app.browserWindow.close()
+			while (isProcessRunning(pid)) {
+				await sleep(10)
+			}
+			expect(isProcessRunning(siadProcess.pid)).to.be.false
+		})
+		it('quits gracefully on close if already minimized and closed again', async () => {
+			const pid = await app.mainProcess.pid()
+			siadProcess = await getSiadChild(pid)
+			app.webContents.executeJavaScript('window.closeToTray = true')
+			app.browserWindow.close()
+			await sleep(1000)
+			expect(await app.browserWindow.isDestroyed()).to.be.false
+			expect(await app.browserWindow.isVisible()).to.be.false
+			expect(isProcessRunning(siadProcess.pid)).to.be.true
+			app.browserWindow.close()
+			while (isProcessRunning(pid)) {
+				await sleep(10)
+			}
+			if (siadProcess.exists) {
+				expect(isProcessRunning(siadProcess.pid)).to.be.false
+			}
+		})
+	})
+	describe('startup with no siad currently running', function() {
+		this.timeout(120000)
+		let app
+		let siadProcess
+		before(async () => {
+			app = new Application({
+				path: electronBinary,
+				args: [
+					'.',
+				],
+			})
+			await app.start()
+			await app.client.waitUntilWindowLoaded()
+			while (await app.client.isVisible('#overlay-text') === true) {
+				await sleep(10)
+			}
+		})
+		after(async () => {
+			await pkillSiad()
+			while (isProcessRunning(siadProcess.pid)) {
+				await sleep(10)
+			}
+			if (app.isRunning()) {
+				app.webContents.send('quit')
+				app.stop()
+			}
+		})
+		it('starts siad and loads correctly on launch', async () => {
+			const pid = await app.mainProcess.pid()
+			await app.client.waitUntilWindowLoaded()
+			siadProcess = await getSiadChild(pid)
+			expect(siadProcess.exists).to.be.true
+		})
+		it('gracefully exits spd on quit', async () => {
+			const pid = await app.mainProcess.pid()
+			app.webContents.send('quit')
+			while (await app.client.isVisible('#overlay-text') === false) {
+				await sleep(10)
+			}
+			while (await app.client.getText('#overlay-text') !== 'Quitting SiaPrime...') {
+				await sleep(10)
+			}
+			while (isProcessRunning(pid)) {
+				await sleep(10)
+			}
+			expect(isProcessRunning(siadProcess.pid)).to.be.false
+		})
+	})
+	describe('startup with a spd already running', function() {
+		this.timeout(120000)
+		let app
+		let siadProcess
+		let beforeDone = false
+		before(async () => {
+			if (!fs.existsSync('siaprime-testing')) {
+				fs.mkdirSync('siaprime-testing')
+			}
+			siadProcess = Siad.launch(process.platform === 'win32' ? 'SiaPrime\\spd.exe' : './SiaPrime/spd', {
+				'siaprime-directory': 'siaprime-testing',
+			})
+			while (await Siad.isRunning('localhost:4280') === false) {
+				await sleep(100)
+			}
+			app = new Application({
+				path: electronBinary,
+				args: [
+					'.',
+				],
+			})
+			await app.start()
+			await app.client.waitUntilWindowLoaded()
+			while (await app.client.isVisible('#overlay-text') === true) {
+				await sleep(500)
+			}
+			beforeDone = true
+		})
+		after(async () => {
+			while (!beforeDone) {
+				await sleep(100)
+			}
+			await pkillSiad()
+			if (app.isRunning()) {
+				app.webContents.send('quit')
+				app.stop()
+			}
+			while (isProcessRunning(siadProcess.pid)) {
+				await sleep(10)
+			}
+		})
+		it('connects and loads correctly to the running spd', async () => {
+			const pid = await app.mainProcess.pid()
+			await app.client.waitUntilWindowLoaded()
+			const childSiad = await getSiadChild(pid)
+			expect(childSiad.exists).to.be.false
+		})
+		it('doesnt quit spd on exit', async () => {
+			const pid = await app.mainProcess.pid()
+			app.webContents.send('quit')
+			while (isProcessRunning(pid)) {
+				await sleep(200)
+			}
+			expect(isProcessRunning(siadProcess.pid)).to.be.true
+			siadProcess.kill('SIGKILL')
+		})
+	})
+})
+
+/* eslint-enable no-invalid-this */
+/* eslint-enable no-unused-expressions */

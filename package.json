@@ -1,0 +1,268 @@
+{
+  "name": "SiaPrime-UI",
+  "productName": "SiaPrime-UI",
+  "version": "1.4.2",
+  "description": "ScPrime-UI is a GUI for interfacing with the ScPrime Storage Network.",
+  "main": "main.js",
+  "scripts": {
+    "test": "cross-env NODE_ENV=test node --trace-warnings ./test/runTests.js",
+    "test-all": "npm run test && npm run build && npm run test-e2e",
+    "test-watch": "npm test -- --watch",
+    "test-e2e": "cross-env NODE_ENV=test node --trace-warnings ./test/runTests.js e2e",
+    "hot-server": "cross-env NODE_ENV=development node --max_old_space_size=2096 server.js",
+    "build-main": "cross-env NODE_ENV=production node ./node_modules/webpack/bin/webpack --config webpack.config.electron.js --progress --profile --colors",
+    "build-renderer": "cross-env NODE_ENV=production node ./node_modules/webpack/bin/webpack --config webpack.config.production.js --progress --profile --colors",
+    "build": "npm run build-main && npm run build-renderer",
+    "start": "cross-env NODE_ENV=production electron ./app/",
+    "start-hot": "cross-env HOT=1 NODE_ENV=development electron --inspect=8080 ./app/main.development",
+    "dev": "npm run hot-server -- --start-hot",
+    "package": "npm run build && build --publish never",
+    "package-win": "npm run build && build --win --x64",
+    "package-linux": "npm run build && build --linux",
+    "package-mac": "npm run build && build --mac",
+    "package-all": "npm run build && build -mwl",
+    "cleanup": "mop -v",
+    "rebuild": "electron-rebuild -f -w node-pty-prebuilt-multiarch"
+  },
+  "build": {
+    "productName": "SiaPrime-UI",
+    "appId": "com.gitlab.SiaPrime.SiaUI",
+    "dmg": {
+      "contents": [
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 150,
+          "type": "file"
+        }
+      ]
+    },
+    "files": [
+      "dist/",
+      "node_modules/",
+      "tray/",
+      "app.html",
+      "main.js",
+      "main.js.map",
+      "package.json"
+    ],
+    "extraFiles": [
+      {
+        "from": "bin/${os}",
+        "to": "resources/bin",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "tray",
+        "to": "resources/tray",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "directories": {
+      "buildResources": "resources",
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "requestedExecutionLevel": "highestAvailable"
+    },
+    "linux": {
+      "target": [
+        "deb",
+        "AppImage"
+      ],
+      "category": "Utility"
+    },
+    "appImage": {
+      "systemIntegration": "doNotAsk"
+    }
+  },
+  "bin": {
+    "electron": "./node_modules/.bin/electron"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/SiaPrime/SiaPrime-UI"
+  },
+  "author": {
+    "name": "Eddie Wang",
+    "email": "eddie@sia.tech",
+    "url": "https://github.com/eddiewang"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://gitlab.com/SiaPrime/SiaPrime-UI"
+  },
+  "keywords": [
+    "electron",
+    "boilerplate",
+    "react",
+    "react-router",
+    "flux",
+    "webpack",
+    "react-hot"
+  ],
+  "homepage": "https://siaprime.net",
+  "devDependencies": {
+    "@babel/core": "7.1.2",
+    "@babel/plugin-proposal-class-properties": "7.4.4",
+    "@babel/plugin-proposal-decorators": "7.4.4",
+    "@babel/plugin-transform-react-constant-elements": "7.0.0",
+    "@babel/plugin-transform-runtime": "7.4.4",
+    "@babel/preset-env": "7.4.5",
+    "@babel/preset-react": "7.0.0",
+    "@babel/preset-stage-0": "7.0.0",
+    "@hot-loader/react-dom": "16.8.1",
+    "@svgr/webpack": "4.0.3",
+    "@types/enzyme": "^3.1.1",
+    "@types/history": "^4.5.2",
+    "@types/jest": "^22.0.0",
+    "@types/lodash": "4.14.117",
+    "@types/react": "16.8.2",
+    "@types/react-dom": "16.8.0",
+    "@types/react-hot-loader": "4.1.0",
+    "@types/react-redux": "7.0.1",
+    "@types/react-router": "^4.0.11",
+    "@types/react-router-dom": "^4.0.7",
+    "@types/react-router-redux": "^5.0.2",
+    "@types/rebass": "0.3.1",
+    "@types/recharts": "1.1.0",
+    "@types/redux-logger": "^3.0.0",
+    "@types/reselect": "2.2.0",
+    "@types/sinon": "^4.0.0",
+    "@types/styled-system": "3.0.4",
+    "asar": "^0.14.0",
+    "autoprefixer": "9.6.0",
+    "awesome-typescript-loader": "5.2.1",
+    "babel-loader": "8.0.4",
+    "babel-plugin-import": "1.9.1",
+    "babel-plugin-lodash": "3.3.4",
+    "babel-plugin-styled-components": "1.10.0",
+    "boiler-room-custodian": "^0.6.2",
+    "concurrently": "^3.1.0",
+    "cross-env": "^5.0.1",
+    "css-loader": "^0.28.4",
+    "css-modules-require-hook": "^4.0.6",
+    "devtron": "^1.4.0",
+    "electron": "4.0.4",
+    "electron-builder": "20.43.0",
+    "electron-builder-http": "19.27.5",
+    "electron-devtools-installer": "^2.2.4",
+    "electron-rebuild": "1.8.4",
+    "enzyme": "^3.0.0",
+    "enzyme-adapter-react-16": "^1.0.0",
+    "express": "^4.14.0",
+    "file-loader": "^1.1.5",
+    "html-webpack-plugin": "3.2.0",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "23.6.0",
+    "less": "3.8.1",
+    "less-loader": "4.1.0",
+    "mini-css-extract-plugin": "0.4.4",
+    "node-sass": "^4.1.1",
+    "postcss-loader": "3.0.0",
+    "raw-loader": "3.0.0",
+    "react-hot-loader": "4.7.1",
+    "react-test-renderer": "^16.0.0",
+    "redux-logger": "^3.0.6",
+    "sass-loader": "^6.0.6",
+    "sinon": "^4.0.0",
+    "spectron": "^3.4.1",
+    "style-loader": "0.23.1",
+    "ts-jest": "23.10.4",
+    "ts-loader": "5.2.1",
+    "ts-node": "7.0.1",
+    "tslint": "^5.4.3",
+    "typescript": "3.1.2",
+    "url-loader": "^0.6.1",
+    "webpack": "4.25.1",
+    "webpack-cli": "3.1.2",
+    "webpack-dev-middleware": "^2.0.3",
+    "webpack-hot-middleware": "^2.13.2",
+    "webpack-merge": "^4.1.1",
+    "webpack-node-externals": "1.7.2"
+  },
+  "dependencies": {
+    "@eddiewang/react-filemanager": "1.1.0-beta.12",
+    "@eddiewang/sia.js": "git+https://gitlab.com/SiaPrime/Nodejs-Sia.git#e679cfe",
+    "@expo/spawn-async": "1.4.0",
+    "@opuscapita/react-filemanager-connector-node-v1": "1.1.0-beta.4",
+    "@opuscapita/react-svg": "4.0.0",
+    "@opuscapita/svg-icons": "1.1.4",
+    "@rebass/components": "4.0.0-1",
+    "@types/gsap": "1.20.1",
+    "@types/qs": "6.5.1",
+    "@types/react-transition-group": "2.0.16",
+    "@types/styled-components": "4.1.10",
+    "@types/yup": "0.26.10",
+    "antd": "3.13.6",
+    "app-root-dir": "1.0.2",
+    "aws-sdk": "2.458.0",
+    "axios": "0.18.0",
+    "babel-runtime": "6.26.0",
+    "bignumber.js": "8.0.2",
+    "blakejs": "1.1.0",
+    "bytes": "3.1.0",
+    "check-disk-space": "1.5.0",
+    "classnames": "2.2.6",
+    "connected-react-router": "4.5.0",
+    "electron-debug": "^1.1.0",
+    "electron-reload": "1.4.0",
+    "electron-window-state": "5.0.3",
+    "font-awesome": "^4.7.0",
+    "formik": "1.5.1",
+    "fs.promises": "0.1.2",
+    "gsap": "2.1.1",
+    "history": "^4.6.1",
+    "lodash": "4.17.11",
+    "node-abi": "2.11.0",
+    "node-pty-prebuilt-multiarch": "0.8.1",
+    "qs": "6.5.2",
+    "react": "16.8.1",
+    "react-addons-transition-group": "15.6.2",
+    "react-contextmenu": "2.11.0",
+    "react-dom": "16.8.1",
+    "react-player": "1.9.3",
+    "react-redux": "6.0.1",
+    "react-router": "^4.1.1",
+    "react-router-dom": "^4.1.1",
+    "react-transition-group": "2.6.0",
+    "react-virtualized": "9.21.1",
+    "rebass": "3.0.0-9",
+    "recharts": "1.3.3",
+    "redux": "4.0.1",
+    "redux-react-hook": "3.1.0",
+    "redux-saga": "1.0.2",
+    "redux-thunk": "^2.1.0",
+    "reselect": "4.0.0",
+    "sia-typescript": "git+https://gitlab.com/SiaPrime/sia-typescript.git#0c87ac42",
+    "sia-opus-connector": "git+https://gitlab.com/SiaPrime/sia-opus-connector.git#2c5b65b",
+    "source-map-support": "^0.5.0",
+    "strip-ansi": "5.2.0",
+    "styled-components": "4.1.3",
+    "styled-system": "3.1.6",
+    "ttys": "0.0.3",
+    "typescript-fsa": "3.0.0-beta-2",
+    "typescript-fsa-reducers": "1.0.0",
+    "typescript-fsa-redux-saga": "2.0.0-beta.1",
+    "winston": "3.2.1",
+    "yup": "0.26.10"
+  },
+  "resolutions": {
+    "bignumber.js": "8.0.2",
+    "babel-runtime": "6.26.0"
+  },
+  "devEngines": {
+    "node": ">=8.x",
+    "npm": ">=3.x"
+  }
+}
