@@ -207,7 +207,7 @@
     "antd": "3.13.6",
     "app-root-dir": "1.0.2",
     "aws-sdk": "2.458.0",
-    "axios": "0.18.0",
+    "axios": "0.21.1",
     "babel-runtime": "6.26.0",
     "bignumber.js": "8.0.2",
     "blakejs": "1.1.0",
