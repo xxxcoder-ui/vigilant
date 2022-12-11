@@ -226,7 +226,7 @@
     "lodash": "4.17.11",
     "node-abi": "2.11.0",
     "node-pty-prebuilt-multiarch": "0.8.1",
-    "qs": "6.5.2",
+    "qs": "6.5.3",
     "react": "16.8.1",
     "react-addons-transition-group": "15.6.2",
     "react-contextmenu": "2.11.0",
